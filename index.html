@@ -53,19 +53,26 @@
       }
 
       #dayScore {
-        font-family: monospace;
+        font-family: 'Courier New', Courier, monospace;
         margin-top: 30px;
         font-size: 16px;
         padding-left: 20px;
         color: #0073ff;
       }
-
+      /* night is fire, day is ice */
       #nightScore {
-        font-family: monospace;
+        font-family: 'Courier New', Courier, monospace;
         margin-top: 30px;
         font-size: 16px;
         padding-left: 20px;
         color: #F75606;
+      }
+      #resetButton {
+        font-family: monospace;
+        margin-top: 30px;
+        font-size: 16px;
+        padding-left: 20px;
+        color: #f7df06;
       }
 
       #made {
@@ -85,6 +92,9 @@
 
   <body>
     <div id="container">
+      <input id="button" type="submit" name="button" value="Reset" onclick="location.reload();"/>
+      <input id="button" type="submit" name="button" value="AddFire" onclick='spawnBall("Fire")'/>
+      <input id="button" type="submit" name="button" value="AddIce" onclick='spawnBall("Ice")'/>
       <canvas id="pongCanvas" width="600" height="600"></canvas>
       <div id="score"></div>
       <div id="dayScore"></div>
@@ -208,6 +218,7 @@
             squares[i][j] = ball.reverseColor;
 
             // Determine bounce direction based on the angle
+           
             if (Math.abs(Math.cos(angle)) > Math.abs(Math.sin(angle))) {
               ball.dx = -ball.dx;
             } else {
@@ -234,12 +245,41 @@
     }
 
     function min_speed(ball) {
+      if (max_speed(ball) < ball.speed) {
+        return max_speed(ball) - 0.1;
+      }
       return ball.speed;
     }
 
     function max_speed(ball) {
       return ball.speed * ball.speed;
     }
+
+    function spawnBall(team) {
+      if (team=="Ice") {
+        balls.push({
+          x: canvas.width / 4,
+          y: canvas.height / 2,
+          dx: 8,
+          dy: -8,
+          reverseColor: DAY_COLOR,
+          ballColor: DAY_BALL_COLOR,
+          speed: 5,
+        });
+      } else {
+        balls.push({
+          x: (canvas.width / 4) * 3,
+          y: canvas.height / 2,
+          dx: -8,
+          dy: 8,
+          reverseColor: NIGHT_COLOR,
+          ballColor: NIGHT_BALL_COLOR,
+          speed: 5,
+        });
+      }
+    }
+
+
 
     function addRandomness(ball) {
       ball.dx += Math.random() * 0.01 - 0.005;
@@ -268,27 +308,43 @@
       return MIN_SPEED + percentage * (MAX_SPEED - MIN_SPEED);
     }
 
+    function set_ball_speed(ball) {
+      if (ball.ballColor === DAY_BALL_COLOR) {
+        ball.speed = dayScore / 100;
+      } else {
+        ball.speed = nightScore / 100;
+      }
+    }
+
+    function get_first_fire_ball() {
+      return balls.find((ball) => ball.ballColor === NIGHT_BALL_COLOR);
+    }
+
+    function get_first_ice_ball() {
+      return balls.find((ball) => ball.ballColor === DAY_BALL_COLOR);
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawSquares();
 
       // scoreElement.textContent = `day ${dayScore} | night ${nightScore}`;
-      dayScoreElement.textContent = `Ice ${dayScore} | Speed ${balls[0].speed}`;
-      nightScoreElement.textContent = `Fire ${nightScore} | Speed ${balls[1].speed}`;
+      dayScoreElement.textContent = `Ice ${dayScore} | Speed ${get_first_ice_ball().speed}`;
+      nightScoreElement.textContent = `Fire ${nightScore} | Speed ${get_first_fire_ball().speed}`;
 
 
       balls.forEach((ball) => {
         drawBall(ball);
         checkSquareCollision(ball);
         checkBoundaryCollision(ball);
+        set_ball_speed(ball);
         ball.x += ball.dx;
         ball.y += ball.dy;
 
         addRandomness(ball);
+        
       });
       
-      balls[0].speed = dayScore / 100;
-      balls[1].speed = nightScore / 100;
 
       iteration++;
       if (iteration % 1_000 === 0) console.log("iteration", iteration);
